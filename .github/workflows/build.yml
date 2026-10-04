@@ -27,6 +27,22 @@ jobs:
       - name: Run automated test suite
         run: npm test
 
+      - name: Pre-cache winCodeSign (resolve Windows symlink privilege issue)
+        shell: powershell
+        run: |
+          $cacheDir = "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0"
+          if (!(Test-Path $cacheDir)) {
+            New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
+            $archive = "$env:TEMP\winCodeSign.7z"
+            Invoke-WebRequest -Uri "https://github.com/electron-userland/electron-builder-binaries/releases/download/winCodeSign-2.6.0/winCodeSign-2.6.0.7z" -OutFile $archive
+            if (Get-Command 7z -ErrorAction SilentlyContinue) {
+              7z x $archive "-o$cacheDir" -xr!darwin -y
+            } else {
+              & "node_modules\7zip-bin\win\x64\7za.exe" x $archive "-o$cacheDir" -xr!darwin -y
+            }
+            Remove-Item -Force $archive
+          }
+
       - name: Build Windows Installer
         run: npm run build
         env:

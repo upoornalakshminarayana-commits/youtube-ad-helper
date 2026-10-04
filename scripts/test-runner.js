@@ -24,16 +24,7 @@ function assert(description, condition, errorMsg = '') {
 
 console.log('====================================================');
 console.log('YT Ad Helper — Automated CI Test Runner');
-console.log('====================================================\n');
-
-try {
-  const gOut = execSync('git status --porcelain', { encoding: 'utf8' });
-  console.log('[Git Check] Working tree status lines:', gOut.trim().split('\n').length);
-} catch (e) {
-  console.warn('[Git Check] Note:', e.message);
-}
-
-// 0. Ensure icons are generated
+console.log('====================================================\n');// 0. Ensure icons are generated
 try {
   require('../desktop/assets/generate-icons.js');
 } catch (e) {
@@ -147,10 +138,11 @@ if (failedTests > 0) {
 } else {
   console.log('All automated CI and integrity checks passed successfully!\n');
   const trigger = path.resolve(__dirname, '.deploy_trigger');
-  if (fs.existsSync(trigger) || process.env.DEPLOY_ON_PASS) {
+  if (fs.existsSync(trigger)) {
     try { fs.unlinkSync(trigger); } catch (e) {}
     require('./deploy');
   } else {
     process.exit(0);
   }
 }
+

@@ -39,7 +39,11 @@
       {
         "from": "native-host",
         "to": "native-host",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*",
+          "!*.exe",
+          "!state.json"
+        ]
       },
       {
         "from": "extension",

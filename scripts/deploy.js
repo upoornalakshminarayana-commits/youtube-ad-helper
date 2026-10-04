@@ -103,12 +103,11 @@ console.log('Verification passed: Only clean production files are staged.');
 console.log('\n--- Step 5: Creating Production Commit ---');
 run('git config user.name "upoornalakshminarayana-commits"', 'Set git user name');
 run('git config user.email "upoornalakshminarayana@users.noreply.github.com"', 'Set git user email');
-run('git commit -m "feat: production release of YT Ad Helper"', 'Commit staged files');
+run('git commit -m "fix: resolve GitHub Actions Windows build failure"', 'Commit staged files');
 
 // 6. Push to GitHub
 console.log('\n--- Step 6: Pushing to GitHub (origin/main) ---');
-// First try safe force push because remote only has 1 initial empty commit
-const pushRes = run('git push -u origin main --force', 'Push to origin/main');
+const pushRes = run('git push origin main', 'Push to origin/main');
 
 if (pushRes.success) {
   console.log('\n====================================================');
