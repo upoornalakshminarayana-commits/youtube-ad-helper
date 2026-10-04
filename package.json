@@ -1,0 +1,68 @@
+{
+  "name": "yt-ad-helper",
+  "productName": "YT Ad Helper",
+  "version": "1.0.0",
+  "description": "High-performance YouTube Ad Helper & Skip Controller with Chrome Native Messaging",
+  "main": "desktop/main/main.js",
+  "author": "YT Ad Helper Team",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron desktop/main/main.js",
+    "icons": "node desktop/assets/generate-icons.js",
+    "prebuild": "node desktop/assets/generate-icons.js",
+    "test": "node scripts/test-runner.js",
+    "register-host": "node native-host/register-host.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis",
+    "build": "electron-builder --win nsis"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.ytadhelper.app",
+    "productName": "YT Ad Helper",
+    "artifactName": "YT-Ad-Helper-Setup.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "desktop/assets"
+    },
+    "files": [
+      "desktop/**/*",
+      "native-host/**/*",
+      "extension/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "native-host",
+        "to": "native-host",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "extension",
+        "to": "extension",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "desktop/assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "YT Ad Helper",
+      "include": "installer/installer.nsh"
+    }
+  }
+}

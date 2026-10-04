@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Ad Helper",
+  "short_name": "YT Helper",
+  "version": "2.0.0",
+  "description": "High-performance, local-only YouTube Ad Skip & Accelerator extension. Auto-clicks skip controls and handles detectable ad states.",
+  "minimum_chrome_version": "110",
+  "permissions": [
+    "storage",
+    "tabs",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://youtube.com/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "YouTube Ad Helper",
+    "default_popup": "popup/popup.html",
+    "default_icon": "icons/icon.svg"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://youtube.com/*"
+      ],
+      "js": [
+        "core/logger.js",
+        "core/storage.js",
+        "core/detector.js",
+        "core/player.js",
+        "core/navigation.js",
+        "core/observer.js",
+        "content.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://youtube.com/*"
+      ],
+      "js": [
+        "main-world.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    }
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlaqjvmv1KlP7PiLztHqeIyo0r6nvfQ+ECtFR1Uad5799Oa2tCDr1/LW9oXRdCFGrQqrhV5y2iMEa77qVgtkbXrLQO55RsTLDXb/t1PRiJguRK0QV2yGh70jyYdCUSkVrkhDXYD2Fjmri47QNcoiwBs+P4IdTIiUB6ACrB9s6lQcnhOxW4yodZrV6qyrwfxtnnf7D0blY/IdAvj6d26l2mX8qZQEBt9RlStkQsUHwN+/pp2186wps21FXf7p2mfaEy6hCQpBlKABPiaVSigeaPECUJjNtqyIKkRKUpqN8UiN/y3rlb+gGoBzhzW5RZgeu1VMlyI/D462EYXvDhQt07wIDAQAB"
+}

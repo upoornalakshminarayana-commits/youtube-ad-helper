@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Ad Helper</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <span class="brand-title">YT HELPER</span>
+          <span class="brand-tag">Ad Skip & Accelerator</span>
+        </div>
+      </div>
+      <div class="version-tag" id="ext-version">v2.0.0</div>
+    </header>
+
+    <!-- Main Power Card -->
+    <section class="card power-card">
+      <div class="power-status-wrap">
+        <div class="status-label-group">
+          <span class="card-caption">Protection Status</span>
+          <div class="status-indicator-row">
+            <span class="status-dot" id="status-dot"></span>
+            <span class="status-text" id="status-text">Active</span>
+          </div>
+        </div>
+        <label class="switch" title="Toggle Protection">
+          <input type="checkbox" id="toggle-enabled" checked>
+          <span class="slider round"></span>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Current Page Verification -->
+      <div class="page-status-row">
+        <span class="meta-label">Current Page:</span>
+        <div class="page-badge" id="page-badge">
+          <span class="page-badge-dot" id="page-badge-dot"></span>
+          <span class="page-badge-text" id="page-badge-text">Checking...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Metrics Grid -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-icon">🔍</span>
+          <span class="metric-title">Detected</span>
+        </div>
+        <span class="metric-value" id="count-detected">0</span>
+        <span class="metric-sub">Ad signals found</span>
+      </div>
+
+      <div class="metric-card highlight-card">
+        <div class="metric-header">
+          <span class="metric-icon">⚡</span>
+          <span class="metric-title">Handled</span>
+        </div>
+        <span class="metric-value" id="count-handled">0</span>
+        <span class="metric-sub">Skipped & Accelerated</span>
+      </div>
+    </section>
+
+    <!-- Feature Controls -->
+    <section class="card options-card">
+      <div class="option-row">
+        <div class="option-info">
+          <span class="option-name">Auto-Click Skip</span>
+          <span class="option-desc">Instantly clicks official skip buttons</span>
+        </div>
+        <label class="switch mini">
+          <input type="checkbox" id="toggle-autoskip" checked>
+          <span class="slider round"></span>
+        </label>
+      </div>
+
+      <div class="option-row">
+        <div class="option-info">
+          <span class="option-name">Ad Fast-Forward</span>
+          <span class="option-desc">Accelerates detectable ad video playback</span>
+        </div>
+        <label class="switch mini">
+          <input type="checkbox" id="toggle-fastforward" checked>
+          <span class="slider round"></span>
+        </label>
+      </div>
+
+      <div class="option-row">
+        <div class="option-info">
+          <span class="option-name">Dismiss Overlays</span>
+          <span class="option-desc">Auto-closes in-player banner popups</span>
+        </div>
+        <label class="switch mini">
+          <input type="checkbox" id="toggle-hideoverlays" checked>
+          <span class="slider round"></span>
+        </label>
+      </div>
+
+      <div class="option-row">
+        <div class="option-info">
+          <span class="option-name">Debug Console</span>
+          <span class="option-desc">Shows structured tags in dev console</span>
+        </div>
+        <label class="switch mini">
+          <input type="checkbox" id="toggle-debug">
+          <span class="slider round"></span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <div class="actions-row">
+      <button type="button" class="btn-secondary" id="btn-reset">
+        <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+          <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+          <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+        </svg>
+        Reset Stats
+      </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span>Lightweight • Local-First • No Analytics</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

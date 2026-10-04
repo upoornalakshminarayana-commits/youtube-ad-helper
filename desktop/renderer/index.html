@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YT Ad Helper</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Custom Windows Titlebar -->
+  <header class="titlebar">
+    <div class="titlebar-drag">
+      <div class="titlebar-brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M21.58 7.19a2.5 2.5 0 0 0-1.76-1.77C18.26 5 12 5 12 5s-6.26 0-7.82.42A2.5 2.5 0 0 0 2.42 7.2 26.2 26.2 0 0 0 2 12c0 1.63.14 3.23.42 4.81.3 1.09 1.15 1.94 2.24 2.22 1.56.42 7.82.42 7.82.42s6.26 0 7.82-.42a2.5 2.5 0 0 0 1.76-1.78c.28-1.57.42-3.17.42-4.8 0-1.63-.14-3.23-.42-4.81zM10 15V9l5.2 3-5.2 3z"/>
+        </svg>
+        <span class="brand-text">YT Ad Helper</span>
+        <span class="version-tag">v2.1.0</span>
+      </div>
+      <div class="status-pill" id="global-status-pill">
+        <span class="status-dot active" id="global-status-dot"></span>
+        <span class="status-text" id="global-status-text">ACTIVE</span>
+      </div>
+    </div>
+    <div class="window-controls">
+      <button class="win-btn" id="win-min" title="Minimize">
+        <svg viewBox="0 0 12 12"><rect y="5.5" width="12" height="1" fill="currentColor"/></svg>
+      </button>
+      <button class="win-btn" id="win-max" title="Maximize">
+        <svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+      </button>
+      <button class="win-btn win-close" id="win-close" title="Close (Minimizes to Tray)">
+        <svg viewBox="0 0 12 12"><path d="M1 1 L11 11 M1 11 L11 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Application Layout -->
+  <div class="app-body">
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+      <div class="nav-group">
+        <button class="nav-item active" data-tab="tab-dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-tab="tab-protection">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          <span>Protection</span>
+        </button>
+        <button class="nav-item" data-tab="tab-stats">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+          <span>Statistics</span>
+        </button>
+        <button class="nav-item" data-tab="tab-setup">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          <span>Extension Setup</span>
+        </button>
+        <button class="nav-item" data-tab="tab-settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+          <span>Settings</span>
+        </button>
+        <button class="nav-item" data-tab="tab-about">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <span>About</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="quick-yt-btn" id="btn-open-youtube-sidebar">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 15V9l5.2 3-5.2 3z"/></svg>
+          <span>Open YouTube</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="content-container">
+
+      <!-- ========================================== -->
+      <!-- TAB 1: DASHBOARD -->
+      <!-- ========================================== -->
+      <section class="tab-pane active" id="tab-dashboard">
+        <!-- Extension Connection Warning Banner (Conditional) -->
+        <div class="alert-banner warning" id="banner-extension-warning" style="display: none;">
+          <div class="alert-content">
+            <svg class="alert-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            <div class="alert-text">
+              <strong>Chrome Extension Required</strong>
+              <span>YT Ad Helper uses a Chrome extension to communicate with YouTube.</span>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-install-ext-banner">Install Chrome Extension</button>
+        </div>
+
+        <!-- Master Switch Card -->
+        <div class="hero-card">
+          <div class="hero-info">
+            <div class="hero-status-row">
+              <span class="live-pulse" id="hero-pulse"></span>
+              <span class="hero-status-label" id="hero-status-label">YOUTUBE PROTECTION ACTIVE</span>
+            </div>
+            <h1 class="hero-title">YouTube Ad Shield</h1>
+            <p class="hero-desc" id="hero-desc">
+              Automated high-speed ad skip, direct seek, and audio muting are actively protecting YouTube playback.
+            </p>
+            <div class="hero-meta">
+              <span class="meta-tag" id="meta-ext-status">
+                <svg class="check-icon" viewBox="0 0 16 16"><path d="M13.485 1.431a1.002 1.002 0 0 1 .323 1.378l-7.25 11.5a1.002 1.002 0 0 1-1.637.072l-3.5-4.5a1 1 0 0 1 1.576-1.228l2.646 3.402 6.464-10.299a1.002 1.002 0 0 1 1.378-.325z" fill="currentColor"/></svg>
+                Chrome Extension Connected
+              </span>
+              <span class="meta-tag">Manifest V3 Local Engine</span>
+            </div>
+          </div>
+          <div class="hero-switch-area">
+            <label class="master-switch">
+              <input type="checkbox" id="master-toggle" checked>
+              <span class="slider"></span>
+            </label>
+            <span class="switch-state-text" id="master-switch-text">ON</span>
+          </div>
+        </div>
+
+        <!-- Live Statistics Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">Ads Detected</span>
+              <div class="stat-icon-wrapper red">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-detected">0</div>
+            <div class="stat-sub">Real YouTube video ad triggers</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">Ads Handled</span>
+              <div class="stat-icon-wrapper green">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-handled">0</div>
+            <div class="stat-sub">Skipped, accelerated, or dismissed</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">Skip Efficiency</span>
+              <div class="stat-icon-wrapper blue">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.48 2.54l2.6 1.53c.56-1.24.88-2.62.88-4.07 0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-5.06.5-9 4.76-9 9.95 0 5.52 4.47 10 9.99 10 3.31 0 6.24-1.61 8.04-4.09l-2.48-1.46C16.14 17.74 14.21 19 12 19z"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-efficiency">--%</div>
+            <div class="stat-sub">Successful intervention rate</div>
+          </div>
+        </div>
+
+        <!-- Features & Quick Actions Card -->
+        <div class="dashboard-grid-row">
+          <div class="section-card">
+            <h2 class="card-title">Active Protection Features</h2>
+            <div class="feature-item">
+              <div class="feature-meta">
+                <strong>Instant Skip Controller</strong>
+                <span>Calls native movie_player.skipAd() via page context immediately</span>
+              </div>
+              <span class="badge success">Active</span>
+            </div>
+            <div class="feature-item">
+              <div class="feature-meta">
+                <strong>Ad-End Direct Seek</strong>
+                <span>Safely advances playhead to ad conclusion for unskippable ads</span>
+              </div>
+              <span class="badge success">Active</span>
+            </div>
+            <div class="feature-item">
+              <div class="feature-meta">
+                <strong>Controlled 16x Acceleration Fallback</strong>
+                <span>Locks playback rate and mutes audio if video stream resists skip</span>
+              </div>
+              <span class="badge success">Active</span>
+            </div>
+            <div class="feature-item">
+              <div class="feature-meta">
+                <strong>In-Player Overlay Dismissal</strong>
+                <span>Closes sponsored interstitial cards and companion banners</span>
+              </div>
+              <span class="badge success">Active</span>
+            </div>
+          </div>
+
+          <div class="section-card">
+            <h2 class="card-title">Quick Actions</h2>
+            <p class="card-desc">Launch YouTube directly or manage protection counters.</p>
+            <div class="action-buttons">
+              <button class="btn btn-danger btn-lg w-100" id="btn-open-youtube-dash">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10 15V9l5.2 3-5.2 3z"/></svg>
+                <span>Launch YouTube</span>
+              </button>
+              <button class="btn btn-secondary w-100 mt-2" id="btn-reset-stats-dash">
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                <span>Reset Statistics</span>
+              </button>
+            </div>
+            <div class="connection-status-box mt-3" id="conn-status-box">
+              <div class="conn-item">
+                <span>Native Messaging Host:</span>
+                <strong class="text-green" id="status-host-reg">Registered (HKCU)</strong>
+              </div>
+              <div class="conn-item">
+                <span>Chrome Extension:</span>
+                <strong class="text-green" id="status-ext-conn">Connected</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: PROTECTION PIPELINE -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="tab-protection">
+        <div class="section-card">
+          <h2 class="card-title">Four-Tier YouTube Ad Handling Engine</h2>
+          <p class="card-desc">The extension operates a prioritized defensive pipeline without breaking normal video playback.</p>
+          
+          <div class="pipeline-flow">
+            <div class="pipeline-step">
+              <div class="step-num">01</div>
+              <div class="step-content">
+                <strong>Instant Native Skip (0ms)</strong>
+                <p>Directly invokes <code>movie_player.skipAd()</code> in the page's execution context at the microsecond an ad begins.</p>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div class="step-num">02</div>
+              <div class="step-content">
+                <strong>Ad-End Seeking</strong>
+                <p>If unskippable, executes <code>movie_player.seekTo(video.duration, true)</code> to conclude the ad stream.</p>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div class="step-num">03</div>
+              <div class="step-content">
+                <strong>Controlled 16x Fast-Forward & Audio Mute</strong>
+                <p>Asserts 16x speed and mutes audio if seeking is buffered, finishing 15-second ads in &lt;1 second.</p>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div class="step-num">04</div>
+              <div class="step-content">
+                <strong>Official Button Click & Clean State Restoration</strong>
+                <p>Clicks official controls as fallback and restores the exact original playback speed (1.0x, 1.5x, 1.75x, 2.0x) and mute status.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card mt-3">
+          <h2 class="card-title">Live Protection Diagnostics</h2>
+          <p class="card-desc">Real-time status reported by the Chrome extension bridge.</p>
+          <div class="diag-table">
+            <div class="diag-row"><span>Engine Type</span><strong>Chrome Manifest V3 Isolated & Main World</strong></div>
+            <div class="diag-row"><span>Interception Latency</span><strong>&lt; 1.0 ms</strong></div>
+            <div class="diag-row"><span>Audio Safety Guard</span><strong>Zero audio bursts during ad skips</strong></div>
+            <div class="diag-row"><span>Normal Video Safe</span><strong>Watchdog ensures creator content plays at user's chosen speed</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: STATISTICS -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="tab-stats">
+        <div class="section-card">
+          <h2 class="card-title">Lifetime Protection Metrics</h2>
+          <p class="card-desc">Synchronized directly from the local Chrome extension storage.</p>
+          
+          <div class="stats-grid mt-3">
+            <div class="stat-card">
+              <span class="stat-title">Total Ads Intercepted</span>
+              <div class="stat-value" id="stats-tab-detected">0</div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Total Ads Neutralized</span>
+              <div class="stat-value" id="stats-tab-handled">0</div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Estimated Time Saved</span>
+              <div class="stat-value" id="stats-tab-saved">0 min</div>
+              <div class="stat-sub">Based on average 15s YouTube ads</div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <button class="btn btn-secondary" id="btn-reset-stats-tab">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+              <span>Reset All Counters</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: EXTENSION SETUP GUIDE -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="tab-setup">
+        <div class="section-card">
+          <h2 class="card-title">Chrome Extension Installation & Approval Flow</h2>
+          <p class="card-desc">
+            Chrome requires the user to explicitly approve and load extensions. Follow these two simple steps:
+          </p>
+
+          <div class="setup-steps">
+            <div class="setup-step-box">
+              <div class="step-badge">1</div>
+              <div class="step-info">
+                <strong>Open Chrome Extensions Page</strong>
+                <p>Click the button below to open Chrome's Extensions manager (<code>chrome://extensions</code>) and enable <strong>Developer mode</strong> in the top-right corner.</p>
+              </div>
+            </div>
+
+            <div class="setup-step-box">
+              <div class="step-badge">2</div>
+              <div class="step-info">
+                <strong>Click "Load unpacked" & Select Folder</strong>
+                <p>Click <strong>Load unpacked</strong> and select the project folder where the extension files reside:</p>
+                <div class="code-box" id="ext-path-box">Loading folder path...</div>
+              </div>
+            </div>
+
+            <div class="setup-step-box">
+              <div class="step-badge">3</div>
+              <div class="step-info">
+                <strong>Ready! Desktop App Connects Automatically</strong>
+                <p>As soon as the extension is loaded, the Native Messaging Host connects. The status above will immediately turn green (ACTIVE).</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="setup-actions mt-3">
+            <button class="btn btn-primary btn-lg" id="btn-open-ext-setup">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+              <span>Open Chrome Extensions & Folder</span>
+            </button>
+            <button class="btn btn-secondary btn-lg" id="btn-re-register-host">
+              <span>Re-register Native Host (Windows Registry)</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 5: SETTINGS -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="tab-settings">
+        <div class="section-card">
+          <h2 class="card-title">Application Preferences</h2>
+          
+          <div class="settings-list">
+            <div class="setting-item">
+              <div class="setting-info">
+                <strong>Start YT Ad Helper with Windows</strong>
+                <span>Automatically launch controller when logging into Windows</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-autostart">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <strong>Minimize to System Tray on Close</strong>
+                <span>Keep background protection running when closing the window</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-minimize-tray" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <strong>Auto-Connect Native Messaging</strong>
+                <span>Maintain persistent bidirectional IPC pipe between App and Extension</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-native-msg" checked disabled>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 6: ABOUT -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="tab-about">
+        <div class="section-card">
+          <div class="about-hero">
+            <svg class="about-logo" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21.58 7.19a2.5 2.5 0 0 0-1.76-1.77C18.26 5 12 5 12 5s-6.26 0-7.82.42A2.5 2.5 0 0 0 2.42 7.2 26.2 26.2 0 0 0 2 12c0 1.63.14 3.23.42 4.81.3 1.09 1.15 1.94 2.24 2.22 1.56.42 7.82.42 7.82.42s6.26 0 7.82-.42a2.5 2.5 0 0 0 1.76-1.78c.28-1.57.42-3.17.42-4.8 0-1.63-.14-3.23-.42-4.81zM10 15V9l5.2 3-5.2 3z"/>
+            </svg>
+            <h2>YT Ad Helper Desktop Controller</h2>
+            <p class="about-version">Version 2.1.0 • Windows Edition</p>
+          </div>
+
+          <div class="about-details mt-4">
+            <div class="about-point">
+              <strong>100% Local-First & Private</strong>
+              <p>No remote servers, no cloud telemetry, no analytics. All operations execute strictly between your local desktop application and your local browser session.</p>
+            </div>
+            <div class="about-point">
+              <strong>Full Manifest V3 Compliance</strong>
+              <p>Engineered to work seamlessly with modern Chrome, Edge, and Chromium browsers without bypassing browser security boundaries.</p>
+            </div>
+            <div class="about-point">
+              <strong>Native Windows Integration</strong>
+              <p>Communicates over standard Windows Named Pipes and Chrome Native Messaging stdio framing.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

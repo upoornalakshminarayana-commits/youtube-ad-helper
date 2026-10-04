@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>YouTube Ad Helper - Comprehensive Test Suite</title>
+  <style>
+    body {
+      background: #121212;
+      color: #eee;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 24px;
+      line-height: 1.6;
+    }
+    h1 { color: #ff3333; margin-bottom: 8px; }
+    .summary { font-size: 16px; margin-bottom: 20px; padding: 12px; border-radius: 8px; background: #1e1e1e; }
+    .passed { color: #4ade80; font-weight: bold; }
+    .failed { color: #f87171; font-weight: bold; }
+    .test-case {
+      padding: 8px 12px;
+      margin: 6px 0;
+      border-radius: 6px;
+      background: #1a1a1a;
+      border-left: 4px solid #444;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .test-case.pass { border-left-color: #22c55e; }
+    .test-case.fail { border-left-color: #ef4444; background: #2a1515; }
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    .badge.pass { background: #14532d; color: #86efac; }
+    .badge.fail { background: #7f1d1d; color: #fca5a5; }
+  </style>
+
+  <!-- Load Extension Modules -->
+  <script src="extension/core/logger.js"></script>
+  <script src="extension/core/storage.js"></script>
+  <script src="extension/core/detector.js"></script>
+  <script src="extension/core/player.js"></script>
+  <script src="extension/core/navigation.js"></script>
+  <script src="extension/core/observer.js"></script>
+</head>
+<body>
+  <h1>YouTube Ad Helper — Test Suite</h1>
+  <div class="summary" id="summary">Running tests...</div>
+  <div id="results"></div>
+
+  <!-- Mock Mockup Sandbox for DOM Tests -->
+  <div id="sandbox" style="display: none;"></div>
+
+  <script>
+    (async function () {
+      const resultsDiv = document.getElementById('results');
+      const summaryDiv = document.getElementById('summary');
+      const sandbox = document.getElementById('sandbox');
+
+      let passedCount = 0;
+      let failedCount = 0;
+
+      function assert(name, condition, errorMsg = '') {
+        const row = document.createElement('div');
+        row.className = 'test-case ' + (condition ? 'pass' : 'fail');
+        row.innerHTML = `
+          <span>${name} ${condition ? '' : '<small style="color:#f87171;margin-left:8px;">(' + errorMsg + ')</small>'}</span>
+          <span class="badge ${condition ? 'pass' : 'fail'}">${condition ? 'PASS' : 'FAIL'}</span>
+        `;
+        resultsDiv.appendChild(row);
+
+        if (condition) {
+          passedCount++;
+        } else {
+          failedCount++;
+          console.error(`[TEST FAILED] ${name}: ${errorMsg}`);
+        }
+      }
+
+      // ==========================================
+      // Test 1: Logger Module
+      // ==========================================
+      assert('Logger: module exported', typeof YTHelperLogger !== 'undefined');
+      assert('Logger: default debug is false', YTHelperLogger.isDebug() === false);
+      YTHelperLogger.setDebug(true);
+      assert('Logger: setDebug(true) enables debug', YTHelperLogger.isDebug() === true);
+      YTHelperLogger.setDebug(false);
+      assert('Logger: setDebug(false) disables debug', YTHelperLogger.isDebug() === false);
+      assert('Logger: TAGS object contains required tags',
+        YTHelperLogger.TAGS.PLAYER === '[PLAYER]' &&
+        YTHelperLogger.TAGS.AD_DETECT === '[AD-DETECT]' &&
+        YTHelperLogger.TAGS.SKIP === '[SKIP]' &&
+        YTHelperLogger.TAGS.NAVIGATION === '[NAVIGATION]' &&
+        YTHelperLogger.TAGS.OBSERVER === '[OBSERVER]'
+      );
+
+      // ==========================================
+      // Test 2: Storage Module
+      // ==========================================
+      assert('Storage: module exported', typeof YTHelperStorage !== 'undefined');
+      assert('Storage: DEFAULTS defined with proper types',
+        typeof YTHelperStorage.DEFAULTS.enabled === 'boolean' &&
+        typeof YTHelperStorage.DEFAULTS.autoSkip === 'boolean' &&
+        typeof YTHelperStorage.DEFAULTS.fastForward === 'boolean' &&
+        typeof YTHelperStorage.DEFAULTS.debug === 'boolean' &&
+        typeof YTHelperStorage.DEFAULTS.detectedCount === 'number'
+      );
+      const initialSettings = await YTHelperStorage.getSettings();
+      assert('Storage: getSettings() returns valid defaults in non-extension environment',
+        initialSettings.enabled === true && initialSettings.autoSkip === true
+      );
+
+      // ==========================================
+      // Test 3: Navigation Module
+      // ==========================================
+      assert('Navigation: module exported', typeof YTHelperNavigation !== 'undefined');
+      assert('Navigation: extractVideoId extracts standard watch ID',
+        YTHelperNavigation.extractVideoId('https://www.youtube.com/watch?v=dQw4w9WgXcQ') === 'dQw4w9WgXcQ'
+      );
+      assert('Navigation: extractVideoId extracts Shorts ID',
+        YTHelperNavigation.extractVideoId('https://www.youtube.com/shorts/abc123XYZ') === 'abc123XYZ'
+      );
+      assert('Navigation: extractVideoId returns null on homepage',
+        YTHelperNavigation.extractVideoId('https://www.youtube.com/') === null
+      );
+
+      // ==========================================
+      // Test 4: Detector Module
+      // ==========================================
+      assert('Detector: module exported', typeof YTHelperDetector !== 'undefined');
+      assert('Detector: SELECTORS contains skipButtons list',
+        Array.isArray(YTHelperDetector.SELECTORS.skipButtons) &&
+        YTHelperDetector.SELECTORS.skipButtons.includes('.ytp-skip-ad-button') &&
+        YTHelperDetector.SELECTORS.skipButtons.includes('.ytp-ad-skip-button')
+      );
+
+      // DOM Simulation: Normal video player
+      sandbox.style.display = 'block';
+      sandbox.innerHTML = `
+        <div id="movie_player" class="html5-video-player">
+          <video class="html5-main-video" style="width:640px;height:360px;"></video>
+        </div>
+      `;
+      const normalState = YTHelperDetector.detectAdState();
+      assert('Detector: normal player detected as NOT an ad', normalState.isAd === false);
+
+      // DOM Simulation: Ad-showing class added by YouTube
+      const playerEl = document.getElementById('movie_player');
+      playerEl.classList.add('ad-showing');
+      const adShowingState = YTHelperDetector.detectAdState();
+      assert('Detector: player with ad-showing class detected as ad',
+        adShowingState.isAd === true && adShowingState.signals.playerClass === true
+      );
+
+      // DOM Simulation: Skip button present
+      const skipBtn = document.createElement('button');
+      skipBtn.className = 'ytp-ad-skip-button';
+      skipBtn.style.width = '100px';
+      skipBtn.style.height = '40px';
+      playerEl.appendChild(skipBtn);
+      const skipState = YTHelperDetector.detectAdState();
+      assert('Detector: finds official skip button',
+        skipState.skipBtn !== null && skipState.signals.skipButton === true
+      );
+
+      // DOM Simulation: Unskippable ad (no skip button, detected via overlay & video-ads container)
+      playerEl.classList.remove('ad-showing');
+      playerEl.removeChild(skipBtn);
+      const videoAdsEl = document.createElement('div');
+      videoAdsEl.className = 'video-ads ytp-ad-module';
+      const overlayEl = document.createElement('div');
+      overlayEl.className = 'ytp-ad-player-overlay';
+      overlayEl.style.width = '200px';
+      overlayEl.style.height = '100px';
+      videoAdsEl.appendChild(overlayEl);
+      playerEl.appendChild(videoAdsEl);
+
+      const unskippableState = YTHelperDetector.detectAdState();
+      assert('Detector: unskippable ad detected via overlay & video-ads container',
+        unskippableState.isAd === true && unskippableState.signals.videoAdsModule === true
+      );
+
+      // DOM Simulation: Sponsored Badge & In-player companion card (Flipkart style ad)
+      playerEl.removeChild(videoAdsEl);
+      const sponsoredBadge = document.createElement('div');
+      sponsoredBadge.className = 'ytp-ad-badge';
+      sponsoredBadge.textContent = 'Sponsored';
+      sponsoredBadge.style.width = '60px';
+      sponsoredBadge.style.height = '20px';
+      playerEl.appendChild(sponsoredBadge);
+
+      const companionCard = document.createElement('div');
+      companionCard.className = 'ytp-ad-action-interstitial';
+      companionCard.style.width = '120px';
+      companionCard.style.height = '40px';
+      playerEl.appendChild(companionCard);
+
+      const sponsoredState = YTHelperDetector.detectAdState();
+      assert('Detector: real sponsored ad detected via Sponsored badge and companion card',
+        sponsoredState.isAd === true && sponsoredState.signals.sponsoredBadge === true && sponsoredState.signals.adOverlay === true
+      );
+
+      // Clean up sponsored elements
+      playerEl.removeChild(sponsoredBadge);
+      playerEl.removeChild(companionCard);
+
+      // Restore elements for subsequent player tests
+      playerEl.classList.add('ad-showing');
+      playerEl.appendChild(skipBtn);
+
+      // ==========================================
+      // Test 5: Player Module
+      // ==========================================
+      assert('Player: module exported', typeof YTHelperPlayer !== 'undefined');
+
+      let skipClicked = false;
+      skipBtn.addEventListener('click', () => { skipClicked = true; });
+
+      const handleResult = YTHelperPlayer.handleAd({
+        enabled: true,
+        autoSkip: true,
+        fastForward: true,
+        hideOverlayAds: true
+      });
+
+      assert('Player: handleAd clicked the skip button',
+        handleResult.handled === true && handleResult.skipped === true && skipClicked === true
+      );
+
+      // Test Video Acceleration and Audio Muting
+      YTHelperPlayer.reset();
+      const videoEl = playerEl.querySelector('video');
+      videoEl.playbackRate = 1.0;
+      videoEl.muted = false;
+      Object.defineProperty(videoEl, 'duration', { value: 30, writable: true, configurable: true });
+
+      YTHelperPlayer.fastForwardAdVideo(videoEl);
+      const rate = videoEl.playbackRate;
+      const muted = videoEl.muted;
+      assert('Player: ad fast forward sets rate to 16x and mutes video',
+        rate === 16 && muted === true,
+        `Expected rate=16, muted=true; got rate=${rate}, muted=${muted}`
+      );
+
+      // Test State Restoration when Ad ends
+      playerEl.classList.remove('ad-showing');
+      playerEl.removeChild(skipBtn);
+      YTHelperPlayer.restoreVideoState(videoEl);
+      assert('Player: video restored to 1.0x and unmuted when ad finishes',
+        videoEl.playbackRate === 1.0 && videoEl.muted === false
+      );
+
+      // ==========================================
+      // Test 6: Observer Module
+      // ==========================================
+      assert('Observer: module exported', typeof YTHelperObserver !== 'undefined');
+      assert('Observer: start and stop methods exist',
+        typeof YTHelperObserver.start === 'function' &&
+        typeof YTHelperObserver.stop === 'function' &&
+        typeof YTHelperObserver.reconnect === 'function'
+      );
+
+      // ==========================================
+      // Test 7: Edge Case - Custom Playback Speed Preservation
+      // ==========================================
+      YTHelperPlayer.reset();
+      const customRateVideo = document.createElement('video');
+      customRateVideo.className = 'html5-main-video';
+      customRateVideo.playbackRate = 1.75; // User watches at 1.75x
+      customRateVideo.muted = false;
+      playerEl.appendChild(customRateVideo);
+      playerEl.classList.add('ad-showing');
+
+      YTHelperPlayer.fastForwardAdVideo(customRateVideo);
+      assert('Edge Case: custom user speed 1.75x accelerated to 16x during ad', customRateVideo.playbackRate === 16);
+
+      playerEl.classList.remove('ad-showing');
+      YTHelperPlayer.restoreVideoState(customRateVideo);
+      assert('Edge Case: exact custom 1.75x speed restored when ad finishes',
+        customRateVideo.playbackRate === 1.75,
+        `Expected 1.75, got ${customRateVideo.playbackRate}`
+      );
+      playerEl.removeChild(customRateVideo);
+
+      // ==========================================
+      // Test 8: Edge Case - User Already Muted Protection
+      // ==========================================
+      YTHelperPlayer.reset();
+      const alreadyMutedVideo = document.createElement('video');
+      alreadyMutedVideo.className = 'html5-main-video';
+      alreadyMutedVideo.playbackRate = 1.0;
+      alreadyMutedVideo.muted = true; // User was ALREADY muted
+      playerEl.appendChild(alreadyMutedVideo);
+      playerEl.classList.add('ad-showing');
+
+      YTHelperPlayer.fastForwardAdVideo(alreadyMutedVideo);
+      assert('Edge Case: already muted video stays muted during ad', alreadyMutedVideo.muted === true);
+
+      playerEl.classList.remove('ad-showing');
+      YTHelperPlayer.restoreVideoState(alreadyMutedVideo);
+      assert('Edge Case: video remains muted (NOT accidentally unmuted) when ad ends',
+        alreadyMutedVideo.muted === true
+      );
+      playerEl.removeChild(alreadyMutedVideo);
+
+      // ==========================================
+      // Test 9: Edge Case - Duplicate Skip Button Click Prevention
+      // ==========================================
+      YTHelperPlayer.reset();
+      const repeatSkipBtn = document.createElement('button');
+      repeatSkipBtn.className = 'ytp-ad-skip-button';
+      let repeatClickCount = 0;
+      repeatSkipBtn.addEventListener('click', () => { repeatClickCount++; });
+
+      const firstClick = YTHelperPlayer.clickSkipButton(repeatSkipBtn);
+      const secondClickImmediate = YTHelperPlayer.clickSkipButton(repeatSkipBtn);
+      assert('Edge Case: first click succeeds, immediate duplicate click is blocked',
+        firstClick === true && secondClickImmediate === false && repeatClickCount === 1
+      );
+
+      // ==========================================
+      // Test 10: Edge Case - Ad Pod (Ad 1 -> Ad 2 Sequence)
+      // ==========================================
+      YTHelperPlayer.reset();
+      const podVideo = document.createElement('video');
+      podVideo.className = 'html5-main-video';
+      podVideo.playbackRate = 1.25;
+      podVideo.muted = false;
+      playerEl.appendChild(podVideo);
+      playerEl.classList.add('ad-showing');
+
+      // Ad 1 starts
+      YTHelperPlayer.fastForwardAdVideo(podVideo);
+      assert('Edge Case: Ad Pod 1/2 accelerated and muted', podVideo.playbackRate === 16 && podVideo.muted === true);
+
+      // Ad 2 starts immediately without leaving ad-showing
+      YTHelperPlayer.fastForwardAdVideo(podVideo);
+      assert('Edge Case: Ad Pod 2/2 continues at 16x and remains muted', podVideo.playbackRate === 16 && podVideo.muted === true);
+
+      // Entire ad pod finishes
+      playerEl.classList.remove('ad-showing');
+      YTHelperPlayer.restoreVideoState(podVideo);
+      assert('Edge Case: Pod finished, original 1.25x speed and audio cleanly restored',
+        podVideo.playbackRate === 1.25 && podVideo.muted === false
+      );
+      playerEl.removeChild(podVideo);
+
+      // ==========================================
+      // Test 11: Edge Case - Watchdog Normal Video Speed Clamp
+      // ==========================================
+      YTHelperPlayer.reset();
+      if (skipBtn.parentNode === playerEl) {
+        playerEl.removeChild(skipBtn);
+      }
+      playerEl.classList.remove('ad-showing'); // Normal video
+      videoEl.playbackRate = 16.0; // Inadvertently stuck at 16x on normal video
+
+      YTHelperPlayer.handleAd({ enabled: true });
+      assert('Edge Case: Watchdog automatically clamps non-ad video back to 1.0x',
+        videoEl.playbackRate === 1.0,
+        `Expected 1.0, got ${videoEl.playbackRate}`
+      );
+
+      // ==========================================
+      // Test 12: Edge Case - Extension Disabled State
+      // ==========================================
+      playerEl.classList.add('ad-showing');
+      const disabledResult = YTHelperPlayer.handleAd({ enabled: false });
+      assert('Edge Case: When enabled is false, handleAd does nothing',
+        disabledResult.handled === false && disabledResult.isAd === false
+      );
+      playerEl.classList.remove('ad-showing');
+
+      // ==========================================
+      // Test 13: Edge Case - 1.5x and 2.0x Playback Rate Preservation
+      // ==========================================
+      for (const testRate of [1.5, 2.0]) {
+        YTHelperPlayer.reset();
+        const testRateVideo = document.createElement('video');
+        testRateVideo.className = 'html5-main-video';
+        testRateVideo.playbackRate = testRate;
+        testRateVideo.muted = false;
+        playerEl.appendChild(testRateVideo);
+        playerEl.classList.add('ad-showing');
+
+        YTHelperPlayer.fastForwardAdVideo(testRateVideo);
+        assert(`Edge Case: custom user speed ${testRate}x accelerated to 16x during ad`, testRateVideo.playbackRate === 16);
+
+        // Simulate YouTube attempting to reset playbackRate back to 1.0 during the ad
+        testRateVideo.playbackRate = 1.0;
+        testRateVideo.dispatchEvent(new Event('ratechange'));
+        assert(`Edge Case: continuous enforcement overrides YouTube reset back to 16x`, testRateVideo.playbackRate === 16);
+
+        playerEl.classList.remove('ad-showing');
+        YTHelperPlayer.restoreVideoState(testRateVideo);
+        assert(`Edge Case: exact custom ${testRate}x speed cleanly restored when ad finishes`,
+          testRateVideo.playbackRate === testRate,
+          `Expected ${testRate}, got ${testRateVideo.playbackRate}`
+        );
+        playerEl.removeChild(testRateVideo);
+      }
+
+      // ==========================================
+      // Test 14: Edge Case - Dynamic Player Replacement in DOM
+      // ==========================================
+      const oldPlayer = document.getElementById('movie_player');
+      oldPlayer.parentNode.removeChild(oldPlayer);
+      assert('Edge Case: Detector returns null safely when player element is removed',
+        YTHelperDetector.getPlayerElement() === null
+      );
+
+      const newPlayer = document.createElement('div');
+      newPlayer.id = 'movie_player';
+      newPlayer.className = 'html5-video-player';
+      sandbox.appendChild(newPlayer);
+      assert('Edge Case: Detector locates replaced player instance dynamically',
+        YTHelperDetector.getPlayerElement() === newPlayer
+      );
+
+      // ==========================================
+      // AD-SAFETY TEST SUITE (Tests 1 - 8): Zero Content Seek Regression
+      // ==========================================
+
+      // TEST 1: Normal video -> ad -> normal video
+      // Expected: Normal video continues from approximately the position where the ad started (no jump to duration)
+      {
+        YTHelperPlayer.reset();
+        sandbox.innerHTML = `
+          <div id="movie_player" class="html5-video-player">
+            <video class="html5-main-video"></video>
+          </div>
+        `;
+        const p = sandbox.querySelector('#movie_player');
+        const v = p.querySelector('video');
+        Object.defineProperty(v, 'duration', { value: 600, writable: true, configurable: true });
+        v.currentTime = 120; // 2:00 in normal video
+        v.playbackRate = 1.0;
+        v.muted = false;
+
+        // Ad starts
+        p.classList.add('ad-showing');
+        const skipBtn = document.createElement('button');
+        skipBtn.className = 'ytp-ad-skip-button';
+        p.appendChild(skipBtn);
+
+        const res = YTHelperPlayer.handleAd({ enabled: true, autoSkip: true, fastForward: true });
+        assert('TEST 1: Ad handled and skip button clicked without modifying currentTime',
+          res.handled === true && v.currentTime === 120,
+          `Expected currentTime=120, got ${v.currentTime}`
+        );
+
+        // Ad finishes
+        p.classList.remove('ad-showing');
+        p.removeChild(skipBtn);
+        YTHelperPlayer.restoreVideoState(v);
+        assert('TEST 1: Normal video continues from original position (120s / did NOT jump to 600s)',
+          v.currentTime === 120 && v.playbackRate === 1.0,
+          `Expected currentTime=120, rate=1.0; got time=${v.currentTime}, rate=${v.playbackRate}`
+        );
+      }
+
+      // TEST 2: Normal video at 1.5x -> ad -> normal video
+      // Expected: 1.5x restored, currentTime preserved
+      {
+        YTHelperPlayer.reset();
+        const p = sandbox.querySelector('#movie_player');
+        const v = p.querySelector('video');
+        v.currentTime = 200;
+        v.playbackRate = 1.5;
+        v.muted = false;
+
+        p.classList.add('ad-showing');
+        YTHelperPlayer.fastForwardAdVideo(v);
+        assert('TEST 2: During ad, 1.5x video accelerated to 16x and currentTime untouched',
+          v.playbackRate === 16 && v.currentTime === 200,
+          `Expected rate=16, time=200; got rate=${v.playbackRate}, time=${v.currentTime}`
+        );
+
+        p.classList.remove('ad-showing');
+        YTHelperPlayer.restoreVideoState(v);
+        assert('TEST 2: Normal video 1.5x speed cleanly restored and position preserved',
+          v.playbackRate === 1.5 && v.currentTime === 200,
+          `Expected rate=1.5, time=200; got rate=${v.playbackRate}, time=${v.currentTime}`
+        );
+      }
+
+      // TEST 3: Normal video at 2x -> ad -> normal video
+      // Expected: 2x restored, currentTime preserved
+      {
+        YTHelperPlayer.reset();
+        const p = sandbox.querySelector('#movie_player');
+        const v = p.querySelector('video');
+        v.currentTime = 300;
+        v.playbackRate = 2.0;
+        v.muted = false;
+
+        p.classList.add('ad-showing');
+        YTHelperPlayer.fastForwardAdVideo(v);
+        assert('TEST 3: During ad, 2x video accelerated to 16x and currentTime untouched',
+          v.playbackRate === 16 && v.currentTime === 300,
+          `Expected rate=16, time=300; got rate=${v.playbackRate}, time=${v.currentTime}`
+        );
+
+        p.classList.remove('ad-showing');
+        YTHelperPlayer.restoreVideoState(v);
+        assert('TEST 3: Normal video 2x speed cleanly restored and position preserved',
+          v.playbackRate === 2.0 && v.currentTime === 300,
+          `Expected rate=2.0, time=300; got rate=${v.playbackRate}, time=${v.currentTime}`
+        );
+      }
+
+      // TEST 4: User already muted -> ad -> normal video
+      // Expected: Still muted when ad completes
+      {
+        YTHelperPlayer.reset();
+        const p = sandbox.querySelector('#movie_player');
+        const v = p.querySelector('video');
+        v.currentTime = 150;
+        v.playbackRate = 1.0;
+        v.muted = true; // User was ALREADY muted
+
+        p.classList.add('ad-showing');
+        YTHelperPlayer.fastForwardAdVideo(v);
+        assert('TEST 4: Already muted video remains muted during ad', v.muted === true);
+
+        p.classList.remove('ad-showing');
+        YTHelperPlayer.restoreVideoState(v);
+        assert('TEST 4: Video remains muted after ad terminates (user preference preserved)',
+          v.muted === true && v.currentTime === 150
+        );
+      }
+
+      // TEST 5: Ad 1 -> Ad 2 -> normal video
+      // Expected: Both ads handled without skipping normal content
+      {
+        YTHelperPlayer.reset();
+        const p = sandbox.querySelector('#movie_player');
+        const v = p.querySelector('video');
+        v.currentTime = 250;
+        v.playbackRate = 1.25;
+        v.muted = false;
+
+        // Ad 1 starts
+        p.classList.add('ad-showing');
+        YTHelperPlayer.fastForwardAdVideo(v);
+        assert('TEST 5: Ad 1/2 accelerated to 16x, currentTime preserved at 250',
+          v.playbackRate === 16 && v.currentTime === 250
+        );
+
+        // Ad 2 starts immediately (ad pod - ad-showing remains active)
+        YTHelperPlayer.fastForwardAdVideo(v);
+        assert('TEST 5: Ad 2/2 continues at 16x without premature state restore',
+          v.playbackRate === 16 && v.currentTime === 250
+        );
+
+        // Entire pod ends
+        p.classList.remove('ad-showing');
+        YTHelperPlayer.restoreVideoState(v);
+        assert('TEST 5: Ad pod ended: normal video resumes at 250s at 1.25x (not jumped to end)',
+          v.currentTime === 250 && v.playbackRate === 1.25,
+          `Expected time=250, rate=1.25; got time=${v.currentTime}, rate=${v.playbackRate}`
+        );
+      }
+
+      // TEST 6: Sudden mid-roll ad
+      // Expected: Actual content position is NOT moved to the end
+      {
+        YTHelperPlayer.reset();
+        const p = sandbox.querySelector('#movie_player');
+        const v = p.querySelector('video');
+        Object.defineProperty(v, 'duration', { value: 600, writable: true, configurable: true });
+        v.currentTime = 272; // Exactly 4:32 in video
+        v.playbackRate = 1.0;
+        v.muted = false;
+
+        // Sudden mid-roll ad strikes!
+        p.classList.add('ad-showing');
+        const skipBtn = document.createElement('button');
+        skipBtn.className = 'ytp-ad-skip-button';
+        p.appendChild(skipBtn);
+
+        YTHelperPlayer.handleAd({ enabled: true, autoSkip: true, fastForward: true });
+        assert('TEST 6: Sudden mid-roll ad: currentTime is NOT moved to duration (600s)',
+          v.currentTime === 272,
+          `CRITICAL REGRESSION: currentTime jumped to ${v.currentTime}, expected 272`
+        );
+
+        // Ad terminates
+        p.classList.remove('ad-showing');
+        p.removeChild(skipBtn);
+        YTHelperPlayer.restoreVideoState(v);
+        assert('TEST 6: Content resumes seamlessly at 272s (4:32) when mid-roll ends',
+          v.currentTime === 272,
+          `Expected 272, got ${v.currentTime}`
+        );
+      }
+
+      // TEST 7: Normal video WITHOUT an ad
+      // Expected: Absolutely no currentTime modification
+      {
+        YTHelperPlayer.reset();
+        const p = sandbox.querySelector('#movie_player');
+        const v = p.querySelector('video');
+        p.classList.remove('ad-showing');
+        v.currentTime = 50;
+        v.playbackRate = 1.0;
+        v.muted = false;
+
+        const res = YTHelperPlayer.handleAd({ enabled: true, autoSkip: true, fastForward: true });
+        assert('TEST 7: Normal video without ad: handleAd returns handled=false',
+          res.handled === false && res.isAd === false
+        );
+        assert('TEST 7: Absolutely no currentTime modification on normal video',
+          v.currentTime === 50 && v.playbackRate === 1.0
+        );
+      }
+
+      // TEST 8: Unskippable ad
+      // Expected: Use acceleration fallback only while ad state is confirmed. Never seek to video.duration.
+      {
+        YTHelperPlayer.reset();
+        const p = sandbox.querySelector('#movie_player');
+        const v = p.querySelector('video');
+        Object.defineProperty(v, 'duration', { value: 600, writable: true, configurable: true });
+        v.currentTime = 180; // 3:00 in normal video
+        v.playbackRate = 1.0;
+        v.muted = false;
+
+        // Unskippable ad: ad-showing present, but NO skip button
+        p.classList.add('ad-showing');
+        const res = YTHelperPlayer.handleAd({ enabled: true, autoSkip: true, fastForward: true });
+
+        assert('TEST 8: Unskippable ad: fastForward fallback triggered at 16x and muted',
+          res.fastForwarded === true && v.playbackRate === 16 && v.muted === true
+        );
+        assert('TEST 8: Unskippable ad: NEVER seeks main video to video.duration (600s)',
+          v.currentTime === 180,
+          `CRITICAL REGRESSION: Unskippable ad moved currentTime to ${v.currentTime}, expected 180`
+        );
+
+        // Ad ends
+        p.classList.remove('ad-showing');
+        YTHelperPlayer.restoreVideoState(v);
+        assert('TEST 8: State cleanly restored: rate=1.0x, muted=false, currentTime remains 180',
+          v.playbackRate === 1.0 && v.muted === false && v.currentTime === 180
+        );
+      }
+
+      // TEST 9: Sponsored Overlay/Card during normal playback at 4:32
+      // Expected: Video playback speed, mute state, and currentTime are NOT modified; close button clicked if available
+      {
+        YTHelperPlayer.reset();
+        sandbox.innerHTML = `
+          <div id="movie_player" class="html5-video-player">
+            <video class="html5-main-video"></video>
+            <div class="ytp-ad-action-interstitial"></div>
+            <button class="ytp-ad-overlay-close-button"></button>
+          </div>
+        `;
+        const p = sandbox.querySelector('#movie_player');
+        const v = p.querySelector('video');
+        const overlayCloseBtn = p.querySelector('.ytp-ad-overlay-close-button');
+        let overlayDismissed = false;
+        overlayCloseBtn.addEventListener('click', () => { overlayDismissed = true; });
+
+        Object.defineProperty(v, 'duration', { value: 600, writable: true, configurable: true });
+        v.currentTime = 272; // 4:32 in video
+        v.playbackRate = 1.0;
+        v.muted = false;
+
+        // Overlay is present, but it is NOT a video ad (no ad-showing class, no skip button)
+        const detState = YTHelperDetector.detectAdState();
+        assert('TEST 9: Detector correctly classifies as isOverlayAd=true and isVideoAd=false',
+          detState.isOverlayAd === true && detState.isVideoAd === false && detState.isAd === true
+        );
+
+        const res = YTHelperPlayer.handleAd({ enabled: true, autoSkip: true, fastForward: true, hideOverlayAds: true });
+
+        assert('TEST 9: Overlay dismissed without modifying video playback',
+          res.closedOverlay === true && overlayDismissed === true && res.fastForwarded === false
+        );
+        assert('TEST 9: Video playback rate and volume completely untouched during overlay',
+          v.playbackRate === 1.0 && v.muted === false && v.currentTime === 272,
+          `Expected rate=1.0, muted=false, time=272; got rate=${v.playbackRate}, muted=${v.muted}, time=${v.currentTime}`
+        );
+      }
+
+      // TEST 10: Mid-Roll Sponsored Video Ad interrupting playback at 4:32
+      // Expected: Video ad detected (isVideoAd=true), accelerated to 16x and muted; restored at 272s
+      {
+        YTHelperPlayer.reset();
+        sandbox.innerHTML = `
+          <div id="movie_player" class="html5-video-player ad-showing ad-interrupting">
+            <video class="html5-main-video"></video>
+            <div class="ytp-ad-badge">Sponsored</div>
+            <button class="ytp-ad-skip-button"></button>
+          </div>
+        `;
+        const p = sandbox.querySelector('#movie_player');
+        const v = p.querySelector('video');
+        const skipBtn = p.querySelector('.ytp-ad-skip-button');
+        let skipClicked = false;
+        skipBtn.addEventListener('click', () => { skipClicked = true; });
+
+        Object.defineProperty(v, 'duration', { value: 600, writable: true, configurable: true });
+        v.currentTime = 272;
+        v.playbackRate = 1.0;
+        v.muted = false;
+
+        const detState = YTHelperDetector.detectAdState();
+        assert('TEST 10: Mid-roll sponsored video ad classified as isVideoAd=true',
+          detState.isVideoAd === true && detState.isAd === true
+        );
+
+        const res = YTHelperPlayer.handleAd({ enabled: true, autoSkip: true, fastForward: true });
+        assert('TEST 10: Mid-roll skip button clicked safely without seek',
+          res.skipped === true && skipClicked === true && v.currentTime === 272
+        );
+
+        // Mid-roll ad concludes
+        p.classList.remove('ad-showing', 'ad-interrupting');
+        p.removeChild(skipBtn);
+        YTHelperPlayer.restoreVideoState(v);
+
+        assert('TEST 10: Normal video continues at 4:32 (272s) after mid-roll sponsored ad',
+          v.currentTime === 272 && v.playbackRate === 1.0
+        );
+      }
+
+      sandbox.innerHTML = '';
+      sandbox.style.display = 'none';
+
+      // Summary
+      summaryDiv.innerHTML = `
+        Completed: <span class="passed">${passedCount} Passed</span>,
+        <span class="${failedCount > 0 ? 'failed' : 'passed'}">${failedCount} Failed</span>
+      `;
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "com.ytadhelper.nativehost",
+  "description": "YT Ad Helper Desktop Controller Native Messaging Host",
+  "path": "host.bat",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://pckkndhmofaapbnhpkeebobcpgknhdph/",
+    "chrome-extension://kdhmofaapbnhpkeebobcpgknhdph/",
+    "chrome-extension://eapfopnhpkeebobcpgknhdphabnhpke/",
+    "chrome-extension://nhpkeebobcpgknhdphabnhpkeeapfop/",
+    "chrome-extension://oleoaeaaccdhfgapdgbnjenkfnanofca/"
+  ]
+}
