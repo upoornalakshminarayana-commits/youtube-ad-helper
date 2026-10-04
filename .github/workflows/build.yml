@@ -51,9 +51,22 @@ jobs:
       - name: Build Windows Installer
         shell: powershell
         run: |
-          npm run build
+          $p = Start-Process -FilePath "cmd.exe" -ArgumentList "/c npx electron-builder --win nsis" -NoNewWindow -PassThru -Wait -RedirectStandardOutput "build_stdout.log" -RedirectStandardError "build_stderr.log"
+          Write-Host "=== BUILD STDOUT ==="
+          if (Test-Path "build_stdout.log") { Get-Content "build_stdout.log" }
+          Write-Host "=== BUILD STDERR ==="
+          if (Test-Path "build_stderr.log") { Get-Content "build_stderr.log" }
+          if ($p.ExitCode -ne 0) { exit $p.ExitCode }
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload Build Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build_*.log
+          if-no-files-found: ignore
 
       - name: Upload Installer Artifact
         uses: actions/upload-artifact@v4
