@@ -1,5 +1,5 @@
 /**
- * Generates valid PNG icons (128x128 app icon and 32x32 tray icon)
+ * Generates valid PNG and ICO icons (256x256 app icon, 32x32 tray icon, and icon.ico)
  * using Node's standard built-in zlib and buffer modules (zero dependencies).
  */
 
@@ -80,27 +80,44 @@ function crc32(buf) {
   return (crc ^ -1) >>> 0;
 }
 
-// App Icon (128x128): Red rounded container with Play Triangle and Lightning Bolt
-const appIconBuffer = createPng(128, 128, (x, y, w, h) => {
+function createIcoFromPng(pngBuffer) {
+  const icoHeader = Buffer.alloc(6);
+  icoHeader.writeUInt16LE(0, 0); // Reserved
+  icoHeader.writeUInt16LE(1, 2); // Type 1 = ICO
+  icoHeader.writeUInt16LE(1, 4); // Number of images = 1
+
+  const dirEntry = Buffer.alloc(16);
+  dirEntry.writeUInt8(0, 0); // Width 256 = 0
+  dirEntry.writeUInt8(0, 1); // Height 256 = 0
+  dirEntry.writeUInt8(0, 2); // Colors (0 = no palette)
+  dirEntry.writeUInt8(0, 3); // Reserved
+  dirEntry.writeUInt16LE(1, 4); // Color planes
+  dirEntry.writeUInt16LE(32, 6); // Bits per pixel
+  dirEntry.writeUInt32LE(pngBuffer.length, 8); // Size of PNG image
+  dirEntry.writeUInt32LE(22, 12); // Offset = 6 + 16 = 22
+
+  return Buffer.concat([icoHeader, dirEntry, pngBuffer]);
+}
+
+// App Icon (256x256): High-res Red container with Play Triangle and Lightning Bolt
+const appIconBuffer = createPng(256, 256, (x, y, w, h) => {
   const cx = w / 2;
   const cy = h / 2;
-  const r = 54;
 
   // Rounded rectangle distance
-  const dx = Math.max(0, Math.abs(x - cx) - (cx - 24));
-  const dy = Math.max(0, Math.abs(y - cy) - (cy - 24));
+  const dx = Math.max(0, Math.abs(x - cx) - (cx - 48));
+  const dy = Math.max(0, Math.abs(y - cy) - (cy - 48));
   const dist = Math.sqrt(dx * dx + dy * dy);
 
-  if (dist > 18) {
+  if (dist > 36) {
     return [0, 0, 0, 0]; // Transparent outside rounded corner
   }
 
-  // Play triangle: (48, 38) -> (92, 64) -> (48, 90)
-  // Lightning bolt accents
-  const inTriangle = (x >= 48 && x <= 92 && y >= 38 + (x - 48) * 0.58 && y <= 90 - (x - 48) * 0.58);
+  // Play triangle: (96, 76) -> (184, 128) -> (96, 180)
+  const inTriangle = (x >= 96 && x <= 184 && y >= 76 + (x - 96) * 0.59 && y <= 180 - (x - 96) * 0.59);
   if (inTriangle) {
-    // Lightning bolt in center: (60, 42) to (76, 86)
-    if (x >= 58 && x <= 74 && Math.abs(y - (cy + (x - 66) * 1.5)) < 12) {
+    // Lightning bolt in center
+    if (x >= 116 && x <= 148 && Math.abs(y - (cy + (x - 132) * 1.5)) < 24) {
       return [255, 215, 0, 255]; // Golden lightning bolt
     }
     return [255, 255, 255, 255]; // White play symbol
@@ -118,7 +135,6 @@ const trayIconBuffer = createPng(32, 32, (x, y, w, h) => {
   const dist = Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
   if (dist > 14) return [0, 0, 0, 0];
 
-  // Triangle inside
   const inTriangle = (x >= 12 && x <= 22 && y >= 10 + (x - 12) * 0.6 && y <= 22 - (x - 12) * 0.6);
   if (inTriangle) {
     return [255, 255, 255, 255];
@@ -130,6 +146,7 @@ const trayIconBuffer = createPng(32, 32, (x, y, w, h) => {
 const assetsDir = path.resolve(__dirname);
 fs.mkdirSync(assetsDir, { recursive: true });
 fs.writeFileSync(path.join(assetsDir, 'icon.png'), appIconBuffer);
+fs.writeFileSync(path.join(assetsDir, 'icon.ico'), createIcoFromPng(appIconBuffer));
 fs.writeFileSync(path.join(assetsDir, 'tray-icon.png'), trayIconBuffer);
 
-console.log('[YT Ad Helper] Generated icon.png and tray-icon.png successfully.');
+console.log('[YT Ad Helper] Generated 256x256 icon.png, icon.ico, and tray-icon.png successfully.');
