@@ -146,11 +146,10 @@ if (failedTests > 0) {
   process.exit(1);
 } else {
   console.log('All automated CI and integrity checks passed successfully!\n');
-  const triggerFile = path.resolve(__dirname, '.deploy_trigger');
-  if (fs.existsSync(triggerFile)) {
-    console.log('[Trigger Found] Executing deployment workflow...');
-    try { fs.unlinkSync(triggerFile); } catch (e) {}
-    require('./deploy.js');
+  const trigger = path.resolve(__dirname, '.deploy_trigger');
+  if (fs.existsSync(trigger) || process.env.DEPLOY_ON_PASS) {
+    try { fs.unlinkSync(trigger); } catch (e) {}
+    require('./deploy');
   } else {
     process.exit(0);
   }
