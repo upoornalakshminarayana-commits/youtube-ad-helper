@@ -103,15 +103,19 @@ console.log('Verification passed: Only clean production files are staged.');
 console.log('\n--- Step 5: Creating Production Commit ---');
 run('git config user.name "upoornalakshminarayana-commits"', 'Set git user name');
 run('git config user.email "upoornalakshminarayana@users.noreply.github.com"', 'Set git user email');
-run('git commit -m "fix: resolve GitHub Actions Windows build failure"', 'Commit staged files');
+run('git commit -m "chore: configure v1.0.0 GitHub release and release notes"', 'Commit staged files');
 
-// 6. Push to GitHub
+// 6. Push to GitHub main
 console.log('\n--- Step 6: Pushing to GitHub (origin/main) ---');
 const pushRes = run('git push origin main', 'Push to origin/main');
 
 if (pushRes.success) {
+  console.log('\n--- Step 7: Creating and Pushing Release Tag v1.0.0 ---');
+  run('git tag -f -a v1.0.0 -m "Release v1.0.0"', 'Tag v1.0.0');
+  const tagPushRes = run('git push origin v1.0.0 --force', 'Push tag v1.0.0');
+  
   console.log('\n====================================================');
-  console.log('SUCCESS: Repository successfully synchronized with GitHub!');
+  console.log('SUCCESS: Repository and Release Tag v1.0.0 pushed to GitHub!');
   console.log('====================================================');
 
   const headHash = run('git rev-parse HEAD', 'Get HEAD commit hash').output;
@@ -121,3 +125,4 @@ if (pushRes.success) {
   console.error('\n[PUSH FAILED] Could not push to GitHub.');
   process.exit(1);
 }
+

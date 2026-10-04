@@ -3,9 +3,13 @@ name: Build YT Ad Helper Installer
 on:
   push:
     branches: [ main, master ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-windows:
@@ -94,3 +98,14 @@ jobs:
           name: YT-Ad-Helper-Setup
           path: dist/*.exe
           if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: YT Ad Helper ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          files: dist/YT-Ad-Helper-Setup.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
