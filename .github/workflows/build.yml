@@ -18,8 +18,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
+
+      - name: Enable Windows Developer Mode
+        shell: powershell
+        run: |
+          New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowDevelopmentWithoutDevLicense" -Value 1 -PropertyType DWORD -Force
 
       - name: Install dependencies
         run: npm ci
@@ -27,7 +32,7 @@ jobs:
       - name: Run automated test suite
         run: npm test
 
-      - name: Pre-cache winCodeSign (resolve Windows symlink privilege issue)
+      - name: Pre-cache winCodeSign
         shell: powershell
         run: |
           $cacheDir = "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0"
@@ -36,18 +41,19 @@ jobs:
             $archive = "$env:TEMP\winCodeSign.7z"
             Invoke-WebRequest -Uri "https://github.com/electron-userland/electron-builder-binaries/releases/download/winCodeSign-2.6.0/winCodeSign-2.6.0.7z" -OutFile $archive
             if (Get-Command 7z -ErrorAction SilentlyContinue) {
-              7z x $archive "-o$cacheDir" -xr!darwin -y
+              7z x $archive "-o$cacheDir" "-xr!darwin" -y
             } else {
-              & "node_modules\7zip-bin\win\x64\7za.exe" x $archive "-o$cacheDir" -xr!darwin -y
+              & "node_modules\7zip-bin\win\x64\7za.exe" x $archive "-o$cacheDir" "-xr!darwin" -y
             }
             Remove-Item -Force $archive
           }
 
       - name: Build Windows Installer
-        run: npm run build
+        shell: powershell
+        run: |
+          npm run build
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-          DEBUG: electron-builder
 
       - name: Upload Installer Artifact
         uses: actions/upload-artifact@v4
