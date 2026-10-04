@@ -70,15 +70,12 @@ jobs:
       - name: Build Windows Installer
         shell: powershell
         run: |
-          $p = Start-Process -FilePath "cmd.exe" -ArgumentList "/c npx electron-builder --win nsis" -NoNewWindow -PassThru -Wait -RedirectStandardOutput "build_stdout.log" -RedirectStandardError "build_stderr.log"
-          if ($p.ExitCode -ne 0) {
-            if (Test-Path "build_stderr.log") {
-              Get-Content "build_stderr.log" | ForEach-Object { Write-Host "::error title=Stderr::$_" }
-            }
-            if (Test-Path "build_stdout.log") {
-              Get-Content "build_stdout.log" -Tail 60 | ForEach-Object { Write-Host "::error title=Stdout::$_" }
-            }
-            exit $p.ExitCode
+          $output = npx electron-builder --win nsis --publish never 2>&1
+          $output | ForEach-Object { Write-Host $_ }
+          if ($LASTEXITCODE -ne 0) {
+            $errLines = $output | Where-Object { $_ -match '(⨯|Error|ERR|cannot|Exit status)' }
+            $errLines | Select-Object -Last 8 | ForEach-Object { Write-Host "::error title=BuilderError::$_" }
+            exit $LASTEXITCODE
           }
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false

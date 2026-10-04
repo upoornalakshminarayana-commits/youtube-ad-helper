@@ -14,7 +14,7 @@
     "register-host": "node native-host/register-host.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --win nsis",
-    "build": "electron-builder --win nsis"
+    "build": "electron-builder --win nsis --publish never"
   },
   "dependencies": {},
   "devDependencies": {
@@ -22,6 +22,7 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
+    "publish": null,
     "appId": "com.ytadhelper.app",
     "productName": "YT Ad Helper",
     "artifactName": "YT-Ad-Helper-Setup.${ext}",
