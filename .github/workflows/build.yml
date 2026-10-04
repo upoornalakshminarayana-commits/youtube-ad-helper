@@ -32,19 +32,38 @@ jobs:
       - name: Run automated test suite
         run: npm test
 
-      - name: Pre-cache winCodeSign
+      - name: Pre-cache electron-builder dependencies
         shell: powershell
         run: |
-          $cacheDir = "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0"
-          if (!(Test-Path $cacheDir)) {
-            New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
+          $baseCache = "$env:LOCALAPPDATA\electron-builder\Cache"
+          
+          # 1. winCodeSign
+          $wcsDir = "$baseCache\winCodeSign\winCodeSign-2.6.0"
+          if (!(Test-Path $wcsDir)) {
+            New-Item -ItemType Directory -Force -Path $wcsDir | Out-Null
             $archive = "$env:TEMP\winCodeSign.7z"
             Invoke-WebRequest -Uri "https://github.com/electron-userland/electron-builder-binaries/releases/download/winCodeSign-2.6.0/winCodeSign-2.6.0.7z" -OutFile $archive
-            if (Get-Command 7z -ErrorAction SilentlyContinue) {
-              7z x $archive "-o$cacheDir" "-xr!darwin" -y
-            } else {
-              & "node_modules\7zip-bin\win\x64\7za.exe" x $archive "-o$cacheDir" "-xr!darwin" -y
-            }
+            7z x $archive "-o$wcsDir" "-xr!darwin" -y
+            Remove-Item -Force $archive
+          }
+
+          # 2. nsis
+          $nsisDir = "$baseCache\nsis\nsis-3.0.4.1"
+          if (!(Test-Path $nsisDir)) {
+            New-Item -ItemType Directory -Force -Path $nsisDir | Out-Null
+            $archive = "$env:TEMP\nsis.7z"
+            Invoke-WebRequest -Uri "https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z" -OutFile $archive
+            7z x $archive "-o$nsisDir" -y
+            Remove-Item -Force $archive
+          }
+
+          # 3. nsis-resources
+          $resDir = "$baseCache\nsis\nsis-resources-3.4.1"
+          if (!(Test-Path $resDir)) {
+            New-Item -ItemType Directory -Force -Path $resDir | Out-Null
+            $archive = "$env:TEMP\nsis-resources.7z"
+            Invoke-WebRequest -Uri "https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-resources-3.4.1/nsis-resources-3.4.1.7z" -OutFile $archive
+            7z x $archive "-o$resDir" -y
             Remove-Item -Force $archive
           }
 
@@ -52,11 +71,15 @@ jobs:
         shell: powershell
         run: |
           $p = Start-Process -FilePath "cmd.exe" -ArgumentList "/c npx electron-builder --win nsis" -NoNewWindow -PassThru -Wait -RedirectStandardOutput "build_stdout.log" -RedirectStandardError "build_stderr.log"
-          Write-Host "=== BUILD STDOUT ==="
-          if (Test-Path "build_stdout.log") { Get-Content "build_stdout.log" }
-          Write-Host "=== BUILD STDERR ==="
-          if (Test-Path "build_stderr.log") { Get-Content "build_stderr.log" }
-          if ($p.ExitCode -ne 0) { exit $p.ExitCode }
+          if ($p.ExitCode -ne 0) {
+            if (Test-Path "build_stderr.log") {
+              Get-Content "build_stderr.log" | ForEach-Object { Write-Host "::error title=Stderr::$_" }
+            }
+            if (Test-Path "build_stdout.log") {
+              Get-Content "build_stdout.log" -Tail 60 | ForEach-Object { Write-Host "::error title=Stdout::$_" }
+            }
+            exit $p.ExitCode
+          }
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
